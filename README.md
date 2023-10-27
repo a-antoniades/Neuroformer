@@ -20,9 +20,9 @@
 ## Installation
 
 ```
-conda create -n neuroformer
+conda create -n neuroformer python=3.11
 conda activate neuroformer
-pip install -r requirements.txt
+bash setup_env.sh
 ```
 
 The Smith Lab has open-sourced two datasets for use with this model. Special thanks to Yiyi Yu and Joe Canzano 🙂
@@ -49,6 +49,19 @@ python neuroformer_train.py \
 </p>
 
 You can jointly pretrain the model using the spike causal masking (SCLM) objective and any other downstream task. The trainer will automatically save the model that does best for each corresponding objective (if you also include a holdout dataset). For example model.pt (normal pretraining objective), model_speed.pt, etc.
+
+## Contrastive Learning
+
+To incorporate contrastive learning, just specify it in the config. You can align an arbitrary number of modalities. Here's an example aligning spikes `id`, `frames` and `speed` from the block `behavior`:
+
+```yaml
+contrastive:
+  contrastive: true
+  vars: ['id', 'frames', {'behavior': 'speed'}]
+  clip_embd: 512
+  clip_temp: 0.5
+```
+
 
 ## Integrating your own data
 
@@ -80,12 +93,12 @@ data['behavior variables']: Optional key that represents behavioral variables of
 `intervals`: Provides a breakdown of time intervals or bins in the dataset.
 train_intervals, test_intervals, finetune_intervals: Represent the segments of the dataset that will be used for training, testing, and fine-tuning respectively.
 
-`callback`: This function is passed to the dataloader and parses your stimulus (for example how to index the video frames) according to the relationship it has to your response (spikes). It is designed to integrate any stimulus/response experiment structure. Typically requires only 4-5 lines of code; refer to comments inside `visnav_callback()` and `combo3_V1AL_callback` inside [`datasets.py`](neuroformer/datasets.py) for an example.
+`callback`: This function is passed to the dataloader and parses your stimulus (for example how to index the video frames) according to the relationship it has to your response (spikes). It is designed to integrate any stimulus/response experiment structure. Typically requires only 4-5 lines of code; refer to comments inside `visnav_callback()` and `combo3_V1AL_callback()` inside [`datasets.py`](neuroformer/datasets.py) for an example.
 
 
 ## Modalities and Task Configuration
 
-In the `mconf.yaml` file, you can specify additional modalities other than spikes and frames. For example behavioral features. The model will *automagically* create add/remove the necessary layers to the model. Additionally, you can specify any downstream objective, and choose between a 
+In your config file, [like this one](/share/edc/home/antonis/neuroformer_clean/Neuroformer/configs/Visnav/lateral/mconf_predict_all.yaml), you can specify additional modalities other than spikes and frames. For example behavioral features. The model will *automagically* create add/remove the necessary layers to the model. Additionally, you can specify any downstream objective, and choose between a ***regression*** or ***classification*** task.
 
 Here's what each field represents:
 
@@ -126,7 +139,7 @@ python neuroformer_train.py --dataset lateral \
 
 ## Inference
 
-To generate new spikes:
+**To generate new spikes:**
 ```
 python neuroformer_inference.py --dataset lateral \ 
                                 --ckpt_path "model_directory" \ 
@@ -142,7 +155,7 @@ python neuroformer_inference.py --dataset lateral \
 </div>
 
 
-The [`neuroformer.utils.decode_modality()`](neuroformer/utils.py) function can be used to generate predictions for any of the behavioral variables. *See [`neuroformer_inference.py`](./neuroformer_inference.py) for an example*.
+The `neuroformer.utils.decode_modality()` function can be used to generate predictions for any of the behavioral variables. **See [`neuroformer_inference.py`](./neuroformer_inference.py) for an example**.
 
 ```python
 # block_type = behavior, modality = speed
