@@ -15,7 +15,7 @@
   <img width="100%" src="images/model_arch_2_5.jpg">
 </p>
 
-**Need help using the model with your data, or have general questions? Feel free to contact antonis@ucsb.edu.**
+**Need help using the model with your data, or have general questions, feature suggestions? Feel free to contact antonis@ucsb.edu.**
 
 ## Installation
 
@@ -25,12 +25,11 @@ conda activate neuroformer
 bash setup_env.sh
 ```
 
-The Smith Lab has open-sourced two datasets for use with this model. Special thanks to Yiyi Yu and Joe Canzano 🙂
-
-- `V1AL`: Neuronal activity from the primary visual cortex and a higher visual area (V1 + AL), recorded from awake mice viewing visual stimuli.
+The [Smith Lab](https://slslab.org) has open-sourced two datasets for use with this model. Special thanks to Yiyi Yu and Joe Canzano 🙂
 
 - `lateral` *(visnav)*: Recordings from the lateral visual cortex, spanning V1 and multiple higher visual areas, from mice engaged in a visually-guided navigation task. This dataset includes additional behavioral variables such as speed, and eye gaze (phi, th).
 
+- `V1AL`: Neuronal activity from the primary visual cortex and a higher visual area (V1 + AL), recorded from awake mice viewing visual stimuli.
 
 ## Pretraining
 **To pretrain on the visnav dataset without any additional modalities, you can run the following code:**
@@ -52,7 +51,7 @@ You can jointly pretrain the model using the spike causal masking (SCLM) objecti
 
 ## Contrastive Learning
 
-To incorporate contrastive learning, just specify it in the config. You can align an arbitrary number of modalities. Here's an example aligning spikes `id`, `frames` and `speed` from the block `behavior`:
+To incorporate contrastive learning, just specify it in the config. You can align an arbitrary number of modalities. Here's an example aligning `id` (*spike tokens*), `frames` and `speed` from the *block_type* `behavior`:
 
 ```yaml
 contrastive:
@@ -61,6 +60,8 @@ contrastive:
   clip_embd: 512
   clip_temp: 0.5
 ```
+
+You can use neuroformer.utils.extract_latents() to extract the contrastive latents of your trained model. Coming soon: visualizations of contrastive learning features.
 
 
 ## Integrating your own data
@@ -160,10 +161,10 @@ The `neuroformer.utils.decode_modality()` function can be used to generate predi
 ```python
 # block_type = behavior, modality = speed
 preds = decode_modality(model, dataset, 
-                 modality='speed', 
-                 block_type='behavior',
-                 objective=config.modalities.behavior.speed.objective)
-                           # 'regression' or 'classification'
+                        modality='speed', 
+                        block_type='behavior',
+                        objective=config.modalities.behavior.speed.objective)
+                        # 'regression' or 'classification'
 ```
 
 
