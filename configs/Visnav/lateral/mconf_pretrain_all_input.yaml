@@ -32,7 +32,7 @@ sparse:
   topk_prev_id: null
 
 window:
-  frame: null
+  frame: 0.15
   curr: 0.05
   prev: 0.05
   speed: 0.05
@@ -70,9 +70,9 @@ frame_encoder:
   resnet_backbone: false
 
 contrastive:
-  contrastive: false
-  vars: ['id', 'frames', 'speed']
-  clip_embd: 1024
+  contrastive: true
+  vars: ['id', 'frames', {'speed': 'name'}]
+  clip_embd: 512
   clip_temp: 0.5
 
 # resolution for predictions

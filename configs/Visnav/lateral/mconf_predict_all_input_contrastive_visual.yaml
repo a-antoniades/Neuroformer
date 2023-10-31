@@ -37,28 +37,28 @@ window:
   prev: 0.05
   speed: 0.05
 
-# # Hey! Uncomment here to input modalities!
-# # ...or add your own :D
-# modalities:
-#   behavior:
-#     n_layers: 4
-#     variables:
-#       phi:
-#         data: phi
-#         dt: 0.05
-#         objective: null
-#         predict: false
-#       speed:
-#         data: speed
-#         dt: 0.05
-#         objective: regression
-#         predict: true
-#       th:
-#         data: th
-#         dt: 0.05
-#         objective: null
-#         predict: false
-#     window: 0.05
+# Hey! Uncomment here to input modalities!
+# ...or add your own :D
+modalities:
+  behavior:
+    n_layers: 4
+    variables:
+      phi:
+        data: phi
+        dt: 0.05
+        objective: null
+        predict: false
+      speed:
+        data: speed
+        dt: 0.05
+        objective: regression
+        predict: false
+      th:
+        data: th
+        dt: 0.05
+        objective: null
+        predict: false
+    window: 0.05
 
 predict: null
 
@@ -71,7 +71,7 @@ frame_encoder:
 
 contrastive:
   contrastive: true
-  vars: ['id', 'frames'] # After inputting behavior, you can uncomment this! {'variable': 'speed'}]
+  vars: ['id', 'frames', {'behavior': 'speed'}]
   clip_embd: 512
   clip_temp: 0.5
 

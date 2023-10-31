@@ -32,7 +32,7 @@ sparse:
   topk_prev_id: null
 
 window:
-  frame: null
+  frame: 0.15
   curr: 0.05
   prev: 0.05
   speed: 0.05
@@ -46,7 +46,7 @@ modalities:
       phi:
         data: phi
         dt: 0.05
-        objective: null
+        objective: regression
         predict: true
       speed:
         data: speed
@@ -56,7 +56,7 @@ modalities:
       th:
         data: th
         dt: 0.05
-        objective: null
+        objective: regression
         predict: true
     window: 0.05
 
@@ -64,17 +64,16 @@ predict: null
 
 frame_encoder:
   conv_layer: true
-  kernel_size: [4, 5, 5]
+  kernel_size: [3, 5, 5]
   n_embd: 256
   n_embd_frames: 64
   resnet_backbone: false
 
 contrastive:
-  contrastive: false
-  vars: ['id', 'frames', 'speed']
-  clip_embd: 1024
+  contrastive: true
+  vars: ['id', 'frames', {'speed': 'name'}]
+  clip_embd: 512
   clip_temp: 0.5
-
 # resolution for predictions
 resolution:
   dt: 0.01
