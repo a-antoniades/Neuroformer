@@ -42,7 +42,7 @@ def train_sweep():
     else:
         model_name = "Neuroformer"
 
-    CKPT_PATH = f"/share/edc/home/antonis/neuroformer/models/NF.15/Visnav_VR_Expt/sweeps/{DATASET}/{model_name}/speed_{modalities['all']['speed']['objective']}/{str(config.layers)}/{SEED}"
+    CKPT_PATH = f"./models/NF.15/Visnav_VR_Expt/sweeps/{DATASET}/{model_name}/speed_{modalities['all']['speed']['objective']}/{str(config.layers)}/{SEED}"
     CKPT_PATH = CKPT_PATH.replace("namespace", "").replace(" ", "_")
 
     tconf = TrainerConfig(max_epochs=MAX_EPOCHS, batch_size=BATCH_SIZE, learning_rate=7e-5, 

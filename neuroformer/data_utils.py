@@ -1109,21 +1109,21 @@ class NFDataloader(Dataset):
                 #     elif self.dataset == 'combo_v2':
                 #         n_stim = n_stim
                 if self.frames is not None and \
-                   self.frames.get('window'):
-                    frame_feats = self.frames['feats']
-                    # t['Interval'] += self.window
-                    dt_frames = self.dt_frames if self.dt_frames is not None else 1/20
-                    frame_interval = t['Interval'] if not isinstance(t['interval'], tuple) else t['Interval'][0]
-                    # add 0.5 so we start at end of interval and then go backwards
-                    frame_interval += self.window
-                    frame_idx = get_frame_idx(frame_interval, dt_frames)     # get last 1 second of frames
-                    frame_window = self.frame_window
-                    n_frames = math.ceil(int(1/dt_frames) * frame_window)
-                    frame_idx = frame_idx if frame_idx >= n_frames else n_frames
-                    # f_f = n_frames - f_b
-                    frame_idx = min(frame_idx, frame_feats.shape[0])
-                    f_diff = frame_idx - n_frames
-                    x['frames'] = self.frames['callback'](frame_feats, frame_idx, n_frames, t['Trial'])
+                   self.frames['window'] > 0:
+                        frame_feats = self.frames['feats']
+                        # t['Interval'] += self.window
+                        dt_frames = self.dt_frames if self.dt_frames is not None else 1/20
+                        frame_interval = t['Interval'] if not isinstance(t['Interval'], tuple) else t['Interval'][0]
+                        # add 0.5 so we start at end of interval and then go backwards
+                        frame_interval += self.window
+                        frame_idx = get_frame_idx(frame_interval, dt_frames)     # get last 1 second of frames
+                        frame_window = self.frame_window
+                        n_frames = math.ceil(int(1/dt_frames) * frame_window)
+                        frame_idx = frame_idx if frame_idx >= n_frames else n_frames
+                        # f_f = n_frames - f_b
+                        frame_idx = min(frame_idx, frame_feats.shape[0])
+                        f_diff = frame_idx - n_frames
+                        x['frames'] = self.frames['callback'](frame_feats, frame_idx, n_frames, trial=t['Trial'])
 
                 x['cid'] = torch.tensor(current_id_interval)
                 x['pid'] = torch.tensor(prev_id_interval)

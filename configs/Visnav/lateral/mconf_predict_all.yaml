@@ -70,7 +70,7 @@ frame_encoder:
   resnet_backbone: false
 
 contrastive:
-  contrastive: true
+  contrastive: false
   vars: ['id', 'frames', {'speed': 'name'}]
   clip_embd: 512
   clip_temp: 0.5

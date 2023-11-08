@@ -691,6 +691,23 @@ def predict_beam_search(model, loader, stoi, frame_end=0):
 
 @torch.no_grad()
 def extract_latents(model, dataset):
+    """
+    Extracts latent features from a given model and dataset.
+
+    Args:
+        model (torch.nn.Module): The model to extract features from.
+        dataset (torch.utils.data.Dataset): The dataset to extract features from.
+
+    Returns:
+        feats (collections.defaultdict): A dictionary where each key is a feature name
+                                         and each value is a list of feature values.
+        latents (collections.defaultdict): A dictionary where each key is a modality and each 
+                                            value is a list of latent (CONTRASTIVE) feature values.
+
+    Note:
+        Make sure to load the pre-trained parameters of the model before passing.
+        The model is set to evaluation mode before feature extraction. The model and data are moved to the GPU if one is available.
+    """
     device = torch.cuda.current_device() if torch.cuda.is_available() else "cpu"
     
     model.eval()

@@ -1049,22 +1049,22 @@ def plot_hippocampus(ax, embedding, label, gray = False, idx_order = (0,1,2)):
     return ax
 
 
-def plot_regression(y_true, y_pred, mode, model_name, r, p, 
+def plot_regression(y_true, y_pred, mode, model_name, r, p, color='black', 
                     ax=None, axis_limits=None, save_path=None):
     if ax is None:
         fig, ax = plt.subplots(figsize=(5, 5))
     
-    ax.scatter(y_true, y_pred, s=100, c='k', alpha=0.5)
+    ax.scatter(y_true, y_pred, s=100, alpha=0.5, color=color)
 
     xlims = ax.get_xlim()
     ylims = ax.get_ylim()
     s_f = 0.8
     combined_limits = [min(xlims[0], ylims[0]) * s_f, max(xlims[1], ylims[1]) * s_f]
-    ax.plot(combined_limits, combined_limits, 'k--', color='red')
+    ax.plot(combined_limits, combined_limits, 'k--', color='black')
 
     ax.set_xlabel(f'True {mode}', fontsize=20)
     ax.set_ylabel(f'Predicted {mode}', fontsize=20)
-    ax.set_title(f'{model_name}, Regression', fontsize=20)
+    # ax.set_title(f'{model_name}, Regression', fontsize=20)
     ax.text(0.05, 0.9, 'r = {:.2f}'.format(r), fontsize=20, transform=ax.transAxes)
     ax.text(0.05, 0.8, 'p < 0.001'.format(p), fontsize=20, transform=ax.transAxes)
 
@@ -1073,7 +1073,7 @@ def plot_regression(y_true, y_pred, mode, model_name, r, p,
         ax.set_ylim(axis_limits)
 
     if save_path:
-        plt.savefig(os.path.join(save_path, 'regression.pdf'), dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(save_path, 'regression_2.pdf'), dpi=300, bbox_inches='tight')
 
 
 """

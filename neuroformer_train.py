@@ -152,12 +152,6 @@ Modalities: any additional modalities other than spikes and frames
 frames = {'feats': stimulus, 'callback': callback, 'window': config.window.frame, 'dt': config.resolution.dt}
 
 
-"""
-See neuroformer.
-
-
-"""
-
 def configure_token_types(config, modalities):
     max_window = max(config.window.curr, config.window.prev)
     dt_range = math.ceil(max_window / dt) + 1

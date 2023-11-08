@@ -187,28 +187,6 @@ class Resnet3DBackbone(nn.Module):
         return features
 
 
-#     def __init__(self, config):
-#         super().__init__()
-#         self.backbone = model = torch.hub.load('pytorch/vision:v0.10.0', 'vgg16_bn', pretrained=True).features[:27]
-#         convert_weights(self.backbone)
-#         # # freeze backbone
-#         # for k, v in self.backbone.named_parameters():
-#         #     v.requires_grad = False
-#     def forward(self, x):
-#         features = None
-#         for i in range(len(x)):
-#             x = x.tranpose(0, 1)    # Flip batch and T
-#             feat = self.backbone(x[i])
-#             if features is None:
-#                 features = feat
-#             else:
-#                 features = torch.cat((features, feat))
-#         # (B, t, C, H, W)
-#         x = x.tranpose(0, 1)    # Flip batch and T
-#         x = self.backbone(x)
-#         return x
-
-
 class VideoEncoder(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -234,22 +212,12 @@ class VideoEncoder(nn.Module):
             )
 
     def forward(self, x):
-        # if self.conv_layer:
-        #     # x: (B, C, T, H, W)
-        #     B, C, T, H, W = x.size()
-        #     # Flip C and T and merge B and T]
-        #     x = x.transpose(1, 2).view(-1, C, H, W)
-        #     # Reshape to (B, C, T, H, W)
-        #     x = x.view(B, C, T, H, W)
-        # x = self.to_patch_embedding(x)
-        # print(x.shape)
         if self.conv_layer:
             x = self.conv_block(x)
         else:
             x = self.to_patch_embedding(x)
 
         return x
-        # return x
 
 class ViTEncoder(nn.Module):
     def __init__(self):
@@ -709,7 +677,7 @@ class FeatureEncoder(nn.Module):
     def forward(self, neural, visual):
         for mod in self.neural_state_blocks:
             neural = mod(neural, neural, neural, self.mask)
-        if all([self.frame_state_blocks, visual]):
+        if self.frame_state_blocks is not None and visual.nelement() > 0:
             for mod in self.frame_state_blocks:
                 visual = mod(visual, visual, visual)
             
@@ -887,7 +855,6 @@ class Tapered_GRU(nn.Module):
         return x, h_t
     
 
-import torch.nn.utils.rnn as rnn_utils
 
 class LayerNormGRUCell(nn.Module):
     def __init__(self, input_size, hidden_size):
@@ -940,10 +907,6 @@ class ImprovedGRU(nn.Module):
             x = self.tanh(x)
 
         return x, h_t
-
-
-
-
 
     def _layer_forward(self, x, h, gru_cell, tapering_weights):
         outputs = []
@@ -1326,15 +1289,20 @@ class Neuroformer(nn.Module):
                 if hasattr(self.config.contrastive, 'vars'):
                     for variable in self.config.contrastive.vars:
                         # mean pool all sequence
-                        if variable == 'id':
-                            feats_clip['id'] = feat_contra_id
-                        # use features from eos pos
-                        if variable == 'eos':
-                            feats_clip['eos'] = clip_id_feats
-                        elif variable == 'frames':
-                            feats_clip['frames'] = features['frames'].mean(dim=1)
+                        if isinstance(variable, dict):
+                            for key, value in variable.items():
+                                feat = features[key][value].mean(dim=1)
+                                feats_clip[key] = feat
                         else:
-                            feats_clip[variable] = features[variable]
+                            if variable == 'id':
+                                feats_clip['id'] = feat_contra_id
+                            # use features from eos pos
+                            elif variable == 'eos':
+                                feats_clip['eos'] = clip_id_feats
+                            elif variable == 'frames':
+                                feats_clip['frames'] = features['frames'].mean(dim=1)
+                            else:
+                                feats_clip[variable] = features[variable]
                 # if clip vars unspecified, use id and frames
                 else:
                     feats_clip['frames'] = features['frames'].mean(dim=1)
@@ -1343,8 +1311,8 @@ class Neuroformer(nn.Module):
                 loss['clip'], features['clip'] = self.clip(feats_clip)
                 loss['clip'] = loss['clip'] * (1 / n)
             
-            loss['id'] = ((4 / 5) * loss_id) * (1 - 1 / n)   # sum(loss_id) / (b * 2)   # / len(loss_id)
-            loss['time'] = ((1 / 5) * loss_time) * (1 - 1 / n)
+            loss['id'] = ((3 / 5) * loss_id) * (1 - 1 / n)   # sum(loss_id) / (b * 2)   # / len(loss_id)
+            loss['time'] = ((2 / 5) * loss_time) * (1 - 1 / n)
 
             t = targets['id'].size(1)
             for B, P in enumerate(pad):                

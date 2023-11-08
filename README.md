@@ -99,7 +99,7 @@ train_intervals, test_intervals, finetune_intervals: Represent the segments of t
 
 ## Modalities and Task Configuration
 
-In your config file, [like this one](/share/edc/home/antonis/neuroformer_clean/Neuroformer/configs/Visnav/lateral/mconf_predict_all.yaml), you can specify additional modalities other than spikes and frames. For example behavioral features. The model will *automagically* create add/remove the necessary layers to the model. Additionally, you can specify any downstream objective, and choose between a ***regression*** or ***classification*** task.
+In your config file, [like this one](./configs/Visnav/lateral/mconf_predict_all.yaml), you can specify additional modalities other than spikes and frames. For example behavioral features. The model will *automagically* create add/remove the necessary layers to the model. Additionally, you can specify any downstream objective, and choose between a ***regression*** or ***classification*** task.
 
 Here's what each field represents:
 

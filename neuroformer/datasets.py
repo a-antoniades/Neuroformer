@@ -16,7 +16,7 @@ def split_data_by_interval(intervals, r_split=0.8, r_split_ft=0.1):
     finetune_intervals = np.array(train_intervals[:int(len(train_intervals) * r_split_ft)])
     return train_intervals, test_intervals, finetune_intervals
 
-def combo3_V1AL_callback(frames, frame_idx, n_frames, **kwargs):
+def combo3_V1AL_callback(frames, frame_idx, n_frames, **args):
     """
     Shape of frames: [3, 640, 64, 112]
                      (3 = number of stimuli)
@@ -37,7 +37,7 @@ def combo3_V1AL_callback(frames, frame_idx, n_frames, **kwargs):
     chosen_frames = frames[n_stim, f_idx_0:f_idx_1].type(torch.float32).unsqueeze(0)
     return chosen_frames
 
-def visnav_callback(frames, frame_idx, n_frames, **kwargs):
+def visnav_callback(frames, frame_idx, n_frames, **args):
     """
     frames: [n_frames, 1, 64, 112]
     frame_idx: the frame_idx in question

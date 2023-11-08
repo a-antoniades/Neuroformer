@@ -164,8 +164,6 @@ elif config.gru2_only:
 else:
     model_name = "Neuroformer"
 
-# CKPT_PATH = f"/share/edc/home/antonis/neuroformer/models/NF.15/Visnav_VR_Expt/{DATASET}/{model_name}/1_new/{str(config.layers)}/{str(config.window)}/{SEED}"
-# CKPT_PATH = CKPT_PATH.replace("namespace", "").replace(" ", "_")
 CKPT_PATH = args.ckpt_path
 
 # Define the parameters
