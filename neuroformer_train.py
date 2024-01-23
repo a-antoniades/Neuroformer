@@ -16,6 +16,7 @@ sys.path.append('../')
 import numpy as np
 import pandas as pd
 
+import torch
 from torch.utils.data.dataloader import DataLoader
 
 import math
@@ -235,6 +236,9 @@ if os.path.exists(CKPT_PATH):
     print(f"CKPT_PATH {CKPT_PATH} exists!")
     while os.path.exists(CKPT_PATH + f"_{counter}"):
         counter += 1
+
+if args.resume is not None:
+    model.load_state_dict(torch.load(args.resume))
 
 if args.sweep_id is not None:
     # this is for hyperparameter sweeps
