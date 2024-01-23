@@ -1,5 +1,5 @@
 # Neuroformer 
-### A GPT based multi-modal, multi-task transformer model for pretraining and downstream inference involving brain data.
+### A GPT based multi-modal, multi-task transformer model for pretraining and downstream inference involving brain data. [Paper](https://arxiv.org/abs/2311.00136)
 <!-- <p align="center">
   <img width="55%" src="images/_7fef7456-b2dd-4ef4-bc00-2a15d401e51b.jpg">
 </p> -->
@@ -131,6 +131,7 @@ To finetune the model on one of the behavioral variables (speed, phi, thi), you 
 ```
 python neuroformer_train.py --dataset lateral \
                             --finetune  \
+                            --resume "weights_path" \
                             --loss_brop speed phi th \
                             --config configs/NF/finetune_visnav_all.yaml
 ```
@@ -171,3 +172,41 @@ preds = decode_modality(model, dataset,
 
 
 Note that if you want to generate predictions for a variable that was not used in the pretraining, you will need to add it to the config file (and preferably **finetune** on it first).
+
+
+## Citations
+
+
+
+#### To cite the Neuroformer model paper:
+  
+```
+@misc{antoniades2023neuroformer,
+title={Neuroformer: Multimodal and Multitask Generative Pretraining for Brain Data},
+author={Antonis Antoniades and Yiyi Yu and Joseph Canzano and William Wang and Spencer LaVere Smith},
+year={2023},
+eprint={2311.00136},
+archivePrefix={arXiv},
+primaryClass={q-bio.NC}
+}
+``````
+
+#### To cite the V1AL dataset paper:
+
+```
+@article{YU20222810,
+title = {Selective representations of texture and motion in mouse higher visual areas},
+author = {Yiyi Yu and Jeffrey N. Stirman and Christopher R. Dorsett and Spencer L. Smith},
+journal = {Current Biology},
+volume = {32},
+number = {13},
+pages = {2810-2820.e5},
+year = {2022},
+doi = {https://doi.org/10.1016/j.cub.2022.04.091},
+url = {https://www.sciencedirect.com/science/article/pii/S0960982222007308},
+issn = {0960-9822},
+keywords = {mouse higher visual areas, visual texture, visual motion, form-motion segregation, visual neuron model, calcium imaging, Gabor filter model, naturalistic video, visual edge density, mutual information}
+}
+```
+
+Visnav data is part of ongoing work and will be released upon release of the corresponding work.
