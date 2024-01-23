@@ -220,7 +220,7 @@ if args.predict_modes is not None:
         if not os.path.exists(save_inference_path):
             os.makedirs(save_inference_path)
         print(f"Saving inference results in {os.path.join(save_inference_path, filename)}")
-        behavior_preds.to_csv(os.path.join(save_inference_path, filename))
+        behavior_preds[mode].to_csv(os.path.join(save_inference_path, filename))
 
 # %%
 def plot_regression(y_true, y_pred, mode, model_name, r, p, color='black', 
