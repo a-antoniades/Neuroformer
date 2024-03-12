@@ -65,7 +65,7 @@ def load_V1AL(config, stimulus_path=None, response_path=None, top_p_ids=None):
         # stimulus_path = "/home/antonis/projects/slab/git/slab/transformer_exp/code/data/SImNew3D/stimulus/tiff"
         stimulus_path = "data/Combo3_V1AL/Combo3_V1AL_stimulus.pt"
     if response_path is None:
-        response_path = "data/Combo3_V1AL/NF_1.5/Combo3_V1AL.pkl"
+        response_path = "data/Combo3_V1AL/Combo3_V1AL.pkl"
     
     data = {}
     data['spikes'] = pickle.load(open(response_path, "rb"))
