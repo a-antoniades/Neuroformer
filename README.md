@@ -1,6 +1,6 @@
 # Neuroformer (ICLR 2024)
 [📜 Paper](https://arxiv.org/abs/2311.00136) | [📄 Project Page](https://a-antoniades.github.io/Neuroformer_web/)
-### A GPT based multi-modal, multi-task transformer model for pretraining and downstream inference involving brain data. [Paper](https://arxiv.org/abs/2311.00136)
+### A GPT based multi-modal, multi-task transformer model for pretraining and downstream inference involving brain data.
 <!-- <p align="center">
   <img width="55%" src="images/_7fef7456-b2dd-4ef4-bc00-2a15d401e51b.jpg">
 </p> -->
