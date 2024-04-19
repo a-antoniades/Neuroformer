@@ -19,7 +19,7 @@
 
 <p align="center">
   <!-- <img width="40%" src="images/neuroformer_setup_2.jpg" style="display: inline-block;" /> -->
-  <img width="100%" src="images/generate_neurons.gif" style="display: inline-block;" />
+  <img width="90%" src="images/generate_neurons.gif" style="display: inline-block;" />
 </p>
 
 
