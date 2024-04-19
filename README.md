@@ -1,4 +1,5 @@
 # Neuroformer (ICLR 2024)
+[📜 Paper](https://arxiv.org/abs/2311.00136) | [📄 Project Page](https://a-antoniades.github.io/Neuroformer_web/)
 ### A GPT based multi-modal, multi-task transformer model for pretraining and downstream inference involving brain data. [Paper](https://arxiv.org/abs/2311.00136)
 <!-- <p align="center">
   <img width="55%" src="images/_7fef7456-b2dd-4ef4-bc00-2a15d401e51b.jpg">
@@ -10,10 +11,17 @@
 ### A GPT based multi-modal, multi-task transformer model for generative pretraining and downstream inference involving brain data.
 </p> -->
 
+<!-- 
+<p align="center">
+  <img width="75%" src="images/neuroformer_setup_2.jpg">
+  <img width="100%" src="images/generate_neurons.gif">
+</p> -->
 
 <p align="center">
-  <img width="100%" src="images/model_arch_2_5.jpg">
+  <!-- <img width="40%" src="images/neuroformer_setup_2.jpg" style="display: inline-block;" /> -->
+  <img width="100%" src="images/generate_neurons.gif" style="display: inline-block;" />
 </p>
+
 
 **Need help using the model with your data, or have general questions, feature suggestions? Feel free to contact antonis@ucsb.edu.**
 
