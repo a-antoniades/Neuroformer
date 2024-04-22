@@ -118,6 +118,32 @@ def convert_weights(model: nn.Module):
 
     model.apply(_convert_weights_to_fp16)
 
+def load_pretrained_weights(model, pretrained_path, omit_modules=None):
+    """
+    Load pretrained weights into the model, with the option to omit certain modules.
+
+    Parameters:
+    - model: The model instance into which the weights will be loaded.
+    - pretrained_path: Path to the pretrained weights file.
+    - omit_modules: A list of module names to omit when loading weights.
+    """
+    # Load the entire state_dict from the pretrained model file
+    pretrained_dict = torch.load(pretrained_path)
+    
+    # If there are modules to omit, remove them from the pretrained_dict
+    if omit_modules is not None:
+        pretrained_dict = {k: v for k, v in pretrained_dict.items() if not any(omitted in k for omitted in omit_modules)}
+    
+    # Update the current model's state dict with the filtered pretrained dict
+    model_dict = model.state_dict()
+    model_dict.update(pretrained_dict)
+    
+    # Load the updated state dict into the model
+    model.load_state_dict(model_dict)
+    
+    print(f"Pretrained weights loaded from {pretrained_path}, omitting modules: {omit_modules}")
+
+
 def update_object(obj1, obj2):
     """Update the attributes of obj1 with the attributes of obj2"""
     for attr_name in dir(obj2):
