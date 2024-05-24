@@ -141,7 +141,7 @@ python neuroformer_train.py --dataset lateral \
                             --finetune  \
                             --resume "weights_path" \
                             --loss_brop speed phi th \
-                            --config configs/NF/finetune_visnav_all.yaml
+                            --config ./configs/Visnav/lateral/mconf_predict_all.yaml
 ```
 
 `--loss_bprop` tells the optimizer which losses to backpropagate.  

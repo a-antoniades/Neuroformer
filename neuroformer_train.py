@@ -238,7 +238,8 @@ if os.path.exists(CKPT_PATH):
         counter += 1
 
 if args.resume is not None:
-    model.load_state_dict(torch.load(args.resume))
+    model.load_state_dict(torch.load(args.resume),
+                           strict=False)
 
 if args.sweep_id is not None:
     # this is for hyperparameter sweeps
