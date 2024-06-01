@@ -22,9 +22,6 @@ from skimage import io
 import copy
 
 
-def create_nested_defaultdict():
-    return collections.defaultdict(dict)
-
 def trial_df(data):
     """
     # data: Number of neurons (N,)
@@ -1085,7 +1082,7 @@ class NFDataloader(Dataset):
 
                 ## BEHAVIOR ##
                 if self.modalities is not None:
-                    x['modalities'] = collections.defaultdict(create_nested_defaultdict)
+                    x['modalities'] = collections.defaultdict(lambda: collections.defaultdict(dict))
                     for modality_type, modality in self.modalities.items():
                         for variable_name, variable in modality['variables'].items():
                             # check if window exists
@@ -1103,7 +1100,7 @@ class NFDataloader(Dataset):
                                 # TODO: implement for more than just 0.05 curr window
                                 # pick only current_state behavior
                                 if 'modalities' not in y.keys():
-                                    y['modalities'] = collections.defaultdict(create_nested_defaultdict)
+                                    y['modalities'] = collections.defaultdict(lambda: collections.defaultdict(dict))
                                 y['modalities'][modality_type][variable_name]['value'], y['modalities'][modality_type][variable_name]['dt'] = value[:, -1], dt[-1]
                             else:
                                 x['modalities'][modality_type][variable_name]['value'] = value
