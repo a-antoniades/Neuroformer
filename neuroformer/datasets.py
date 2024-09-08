@@ -12,7 +12,7 @@ import os
 def split_data_by_interval(intervals, r_split=0.8, r_split_ft=0.1):
     chosen_idx = np.random.choice(len(intervals), int(len(intervals) * r_split))
     train_intervals = intervals[chosen_idx]
-    test_intervals = intervals[~chosen_idx]
+    test_intervals = np.array([i for i in intervals if i not in train_intervals])
     finetune_intervals = np.array(train_intervals[:int(len(train_intervals) * r_split_ft)])
     return train_intervals, test_intervals, finetune_intervals
 
