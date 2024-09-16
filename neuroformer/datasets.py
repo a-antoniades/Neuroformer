@@ -10,13 +10,15 @@ import os
 
 
 def split_data_by_interval(intervals, r_split=0.8, r_split_ft=0.1):
-    chosen_idx = np.random.choice(len(intervals), int(len(intervals) * r_split))
+    chosen_idx = np.random.choice(len(intervals), int(len(intervals) * r_split), replace=False)
     train_intervals = intervals[chosen_idx]
     test_intervals = np.array([i for i in intervals if i not in train_intervals])
     finetune_intervals = np.array(train_intervals[:int(len(train_intervals) * r_split_ft)])
+    # sum_intervals = len(train_intervals) + len(test_intervals) # finetune_intervals is part of train_intervals
+    # assert sum_intervals == len(intervals), f"Sum of intervals is not equal to the original intervals: {sum_intervals} != {len(intervals)}"
     return train_intervals, test_intervals, finetune_intervals
 
-def combo3_V1AL_callback(frames, frame_idx, n_frames, **args):
+def combo3_V1AL_callback(frames, frame_idx, n_frames, **kwargs):
     """
     Shape of frames: [3, 640, 64, 112]
                      (3 = number of stimuli)
