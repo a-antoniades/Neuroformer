@@ -55,7 +55,7 @@ else:
 # SET SEED - VERY IMPORTANT
 set_seed(args.seed)
 
-print(f"CONTRASTIUVEEEEEEE {args.contrastive}")
+print(f"CONTRASTIVE {args.contrastive}")
 print(f"VISUAL: {args.visual}")
 print(f"PAST_STATE: {args.past_state}")
 
