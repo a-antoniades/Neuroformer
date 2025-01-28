@@ -1053,6 +1053,8 @@ def plot_regression(y_true, y_pred, mode, model_name, r, p, color='black',
                     ax=None, axis_limits=None, save_path=None):
     if ax is None:
         fig, ax = plt.subplots(figsize=(5, 5))
+
+    p_text = '< 0.001' if p < 0.001 else f'= {p:.3f}'
     
     ax.scatter(y_true, y_pred, s=100, alpha=0.5, color=color)
 
@@ -1066,7 +1068,7 @@ def plot_regression(y_true, y_pred, mode, model_name, r, p, color='black',
     ax.set_ylabel(f'Predicted {mode}', fontsize=20)
     # ax.set_title(f'{model_name}, Regression', fontsize=20)
     ax.text(0.05, 0.9, 'r = {:.2f}'.format(r), fontsize=20, transform=ax.transAxes)
-    ax.text(0.05, 0.8, 'p < 0.001'.format(p), fontsize=20, transform=ax.transAxes)
+    ax.text(0.05, 0.8, f'p {p_text}', fontsize=20, transform=ax.transAxes)
 
     if axis_limits is not None:
         ax.set_xlim(axis_limits)

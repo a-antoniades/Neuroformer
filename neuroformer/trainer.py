@@ -30,7 +30,7 @@ from omegaconf import OmegaConf
 import os
 parent_path = os.path.dirname(os.path.dirname(os.getcwd())) + "/"
 
-from utils import object_to_dict, save_yaml, all_device
+from utils import object_to_dict, save_yaml, all_device, recursive_print
 
 
 # from torch.nn.parallel import DistributedDataParallell as dist
@@ -40,6 +40,20 @@ from torch.utils.data.distributed import DistributedSampler
 from utils import extract_latents
 from utils import get_attr, save_config
 
+
+from torch.utils.data._utils.collate import default_collate
+
+def custom_debug_collate(batch):
+    # print("Batch before collation:", batch)
+    # Your collation logic
+    try:
+        collated_batch = default_collate(batch)
+        # print("Batch after collation:", collated_batch)
+        return collated_batch
+    except Exception as e:
+        print(e)
+        recursive_print(batch)
+        exit()
 
 
 class TrainerConfig:
@@ -98,7 +112,7 @@ class Trainer:
         if torch.cuda.is_available():
             # self.device = torch.cuda.current_device()
             # self.model = torch.nn.DataParallel(self.model).to(self.device)
-            # self.criterion = self.criterion.to(self.device)
+            # self.criterion = self.xcriterion.to(self.device)
 
             if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
                 rank = int(os.environ["RANK"])
@@ -131,12 +145,11 @@ class Trainer:
                        name=config.wandb_name)
             wandb.watch(self.model) 
 
-
     def save_checkpoint(self, loss, epoch=None):
         # DataParallel wrappers keep raw model object in .module attribute
         raw_model = self.model.module if hasattr(self.model, "module") else self.model
         if os.path.exists(self.config.ckpt_path) is False:
-            os.makedirs(self.config.ckpt_path)
+            os.makedirs(self.config.ckpt_path, exist_ok=True)
         if epoch is not None:
             save_pth = os.path.join(self.config.ckpt_path, f"_epoch_{epoch}.pt")
             logger.info("saving %s", save_pth)
@@ -220,7 +233,9 @@ class Trainer:
             sampler = DistributedSampler(data, shuffle=True) if config.dist else None
             loader = DataLoader(data, pin_memory=False,
                                 batch_size=config.batch_size,
-                                num_workers=config.num_workers, sampler=sampler)
+                                num_workers=config.num_workers, 
+                                sampler=sampler,
+                                collate_fn=custom_debug_collate if config.debug else default_collate)
 
             scores = collections.defaultdict(list)
             losses = collections.defaultdict(list)

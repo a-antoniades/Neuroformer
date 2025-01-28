@@ -7,13 +7,25 @@ import numpy as np
 import pandas as pd
 import pickle
 import os
+import mat73
+
+from neuroformer.data_utils import bin_spikes, get_df_visnav, round_n
 
 
 def split_data_by_interval(intervals, r_split=0.8, r_split_ft=0.1):
-    chosen_idx = np.random.choice(len(intervals), int(len(intervals) * r_split))
-    train_intervals = intervals[chosen_idx]
-    test_intervals = intervals[~chosen_idx]
+    # Generate random indices for training set
+    chosen_idx = np.random.choice(len(intervals), int(len(intervals) * r_split), replace=False)
+    # Create a mask for all indices
+    mask = np.zeros(len(intervals), dtype=bool)
+    mask[chosen_idx] = True
+    
+    # Split intervals using the mask
+    train_intervals = intervals[mask]
+    test_intervals = intervals[~mask]
+    
+    # Further split the training intervals to get finetune intervals
     finetune_intervals = np.array(train_intervals[:int(len(train_intervals) * r_split_ft)])
+    
     return train_intervals, test_intervals, finetune_intervals
 
 def combo3_V1AL_callback(frames, frame_idx, n_frames, **args):
@@ -113,3 +125,149 @@ def load_visnav(version, config, selection=None):
     train_intervals, test_intervals, finetune_intervals = split_data_by_interval(intervals, r_split=0.8, r_split_ft=0.01)
 
     return data, intervals, train_intervals, test_intervals, finetune_intervals, visnav_callback
+
+def generate_intervals(start, end, dt):
+    intervals = []
+    current = start
+    while current < end:
+        intervals.append(current)
+        current = round_n(current + dt, dt)
+    return intervals
+
+def split_data_by_trial_intervals(trialsummary, dt, max_time,
+                                  r_split=0.8, r_split_ft=0.1,
+                                  blackout_intervals=None):
+    # Get the number of trials
+    n_trials = len(trialsummary)
+
+    # Generate random indices and shuffle them
+    indices = np.arange(n_trials)
+    np.random.shuffle(indices)
+
+    # Split indices for train and test sets
+    n_train = int(n_trials * r_split)
+    train_indices = indices[:n_train]
+    test_indices = indices[n_train:]
+
+    # Further split the train indices to get finetune indices
+    n_finetune = int(n_train * r_split_ft)
+    finetune_indices = train_indices[:n_finetune]
+
+    # Split the trialsummary based on the shuffled indices
+    train_intervals = trialsummary[train_indices]
+    test_intervals = trialsummary[test_indices]
+    finetune_intervals = trialsummary[finetune_indices]
+
+    # Generate intervals from start to end for each selected trial
+    def fill_intervals(trials):
+        intervals = []
+        for trial in trials:
+            trial_idx, start, outcome = trial
+            # Assuming the end is one unit after start, modify as needed
+            end = start + 1  # Replace with the correct end time logic
+            intervals.extend(generate_intervals(start, end, dt))
+        return np.array(intervals)
+
+    train_intervals_filled = fill_intervals(train_intervals)
+    test_intervals_filled = fill_intervals(test_intervals)
+    finetune_intervals_filled = fill_intervals(finetune_intervals)
+
+    # truncate the intervals to the max time
+    train_intervals_filled = train_intervals_filled[train_intervals_filled < max_time]
+    test_intervals_filled = test_intervals_filled[test_intervals_filled < max_time]
+    finetune_intervals_filled = finetune_intervals_filled[finetune_intervals_filled < max_time]
+
+    if blackout_intervals is not None:
+        train_intervals_filled = train_intervals_filled[~np.isin(train_intervals_filled, blackout_intervals)]
+        test_intervals_filled = test_intervals_filled[~np.isin(test_intervals_filled, blackout_intervals)]
+        finetune_intervals_filled = finetune_intervals_filled[~np.isin(finetune_intervals_filled, blackout_intervals)]
+
+    return train_intervals_filled, test_intervals_filled, finetune_intervals_filled
+
+
+def load_visnav_2(version, config, selection=None):
+    if version == "medial":
+        data_path = "./data/VisNav_VR_Expt/MedialVRDataset/"
+    elif version == "lateral":
+        data_path = "./data/VisNav_VR_Expt/LateralVRDataset/"
+    elif version == "visnav_tigre":
+        data_path = "./data/tigre613_p2s23"
+    
+    mat_file = mat73.loadmat(os.path.join(data_path, "experiment_data.mat"))['neuroformer']
+    data = dict()
+    data['spikes'] = bin_spikes(mat_file['spiketimes']['spks'], config.resolution.dt) # get_df_visnav(mat_file['spiketimes']['spks'], dt_vars=0.05)
+    data['speed'] = mat_file['speed']
+    data['stimulus'] = mat_file['vid_sm']
+    data['phi'] = mat_file['phi']
+    data['th'] = mat_file['th']
+    data['depth'] = mat_file['depth']
+    data['trialsummary'] = mat_file['trialsummary']
+    data['vid_sm'] = mat_file['vid_sm']
+
+    # add any other data that needs to be loaded
+    if hasattr(config, 'modalities'):
+        for modality_type_name, modality_type in vars(config.modalities).items():
+            for modality_name, modality_details in vars(modality_type.variables).items():
+                if modality_name in mat_file:
+                    data[modality_name] = mat_file[modality_name]
+
+    # Assuming blackout_indices is available in the data
+    if 'blackout_indices' in mat_file:
+        # blackout_indices = mat_file['blackout_indices'].astype(bool)
+        # for key in data:
+        #     shape = data[key].shape
+        #     if shape[0] == len(blackout_indices):
+        #         data[key] = data[key][~blackout_indices]
+        #     elif len(shape) > 1 and shape[1] == len(blackout_indices):
+        #         data[key] = data[key][:, ~blackout_indices]
+        #     elif len(shape) > 2 and shape[2] == len(blackout_indices):
+        #         data[key] = data[key][:, :, ~blackout_indices]
+        blackout_intervals = mat_file['blackout_indices'] * 0.05
+
+    max_time = data['stimulus'].shape[0] * 0.05
+    intervals = np.arange(0, max_time * config.resolution.dt, config.window.curr)
+    train_intervals, test_intervals, finetune_intervals = split_data_by_trial_intervals(data['trialsummary'], 
+                                                                                        r_split=0.8, r_split_ft=0.01,
+                                                                                        dt=0.05, max_time=max_time,
+                                                                                        blackout_intervals=blackout_intervals)
+
+    return data, intervals, train_intervals, test_intervals, finetune_intervals, visnav_callback
+
+
+# def load_visnav_2(version, config, selection=None):
+#     if version == "medial":
+#         data_path = "./data/VisNav_VR_Expt/MedialVRDataset/"
+#     elif version == "lateral":
+#         data_path = "./data/VisNav_VR_Expt/LateralVRDataset/"
+#     elif version == "visnav_tigre":
+#         data_path = "./data/tigre613_p2s23"
+    
+#     mat_file = mat73.loadmat(os.path.join(data_path, "experiment_data.mat"))['neuroformer']
+#     data = dict()
+#     data['spikes'] = bin_spikes(mat_file['spiketimes']['spks'], config.resolution.dt) # get_df_visnav(mat_file['spiketimes']['spks'], dt_vars=0.05)
+#     data['speed'] = mat_file['speed']
+#     data['stimulus'] = mat_file['vid_sm']
+#     data['phi'] = mat_file['phi']
+#     data['th'] = mat_file['th']
+#     data['depth'] = mat_file['depth']
+
+#     # Assuming blackout_indices is available in the data
+#     if 'blackout_indices' in mat_file:
+#         blackout_indices = mat_file['blackout_indices'].astype(bool)
+#         for key in data:
+#             shape = data[key].shape
+#             if shape[0] == len(blackout_indices):
+#                 data[key] = data[key][~blackout_indices]
+#             elif len(shape) > 1 and shape[1] == len(blackout_indices):
+#                 data[key] = data[key][:, ~blackout_indices]
+#             elif len(shape) > 2 and shape[2] == len(blackout_indices):
+#                 data[key] = data[key][:, :, ~blackout_indices]
+
+#     intervals = np.arange(0, data['spikes'].shape[1] * config.resolution.dt, config.window.curr)
+#     train_intervals, test_intervals, finetune_intervals = split_data_by_interval(intervals, r_split=0.8, r_split_ft=0.01)
+
+#     return data, intervals, train_intervals, test_intervals, finetune_intervals, visnav_callback
+
+
+
+

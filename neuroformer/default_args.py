@@ -1,9 +1,12 @@
 import argparse
+from distutils.util import strtobool
 
 def parse_args():
     parser = argparse.ArgumentParser()
     # parser.add_argument("--infer", action="store_true", help="Inference mode")
     parser.add_argument("--train", action="store_true", default=False, help="Train mode")
+    parser.add_argument("--debug", action="store_true", default=False, help="Debug mode")
+    parser.add_argument("--wandb", type=lambda x: bool(strtobool(x)), default=True, help="Enable or disable Weights & Biases logging")
     parser.add_argument("--dist", action="store_true", default=False, help="Distributed mode")
     parser.add_argument("--seed", type=int, default=25, help="Random seed")
     parser.add_argument("--resume", type=str, default=None, help="Resume from checkpoint")

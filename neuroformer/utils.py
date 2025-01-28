@@ -178,6 +178,10 @@ def create_modalities_dict(data, modalities_config):
                 'predict': variable_config['predict'],
                 'objective': variable_config['objective']
             }
+            # Iterate over all items in variable_config and add them to the modalities dictionary
+            for key, value in variable_config.items():
+                if key not in ['data', 'dt', 'window', 'predict', 'objective']:
+                    modalities[modality_type]['variables'][variable_type][key] = value
     return modalities
     
 def get_model_attr(mconf, tconf):
@@ -882,32 +886,3 @@ def check_common_attrs(*objects):
             common_attrs[attr] = (first_value, common_objects)
 
     return common_attrs
-
-
-def bin_spikes(data, dt):
-    """
-    spikerates = bin_spikes(response, 0.1)
-    """
-    # Compute the maximum time across all spike times
-    max_time = max(neuron[0].max() for neuron in data if neuron[0].size != 0)
-
-    # Compute the number of intervals
-    N_intervals = int(np.ceil(max_time / dt))
-
-    # Create a 2D matrix of zeros
-    N_Neurons = len(data)
-    spike_matrix = np.zeros((N_Neurons, N_intervals))
-
-    # Iterate over the neurons and their spike times
-    for i, neuron in enumerate(data):
-        # Remove NaN values
-        spike_times = neuron[0][~np.isnan(neuron[0])]
-        # Iterate over the spike times
-        for spike_time in spike_times:
-            # Compute the interval index for the spike time
-            interval_index = int(spike_time // dt)
-
-            # Increment the spike count for the neuron and interval
-            spike_matrix[i, interval_index] += 1
-
-    return spike_matrix

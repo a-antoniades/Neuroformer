@@ -406,22 +406,27 @@ def decode_modality(model, dataset, modality,
         trials.extend(trial)
         modality_true.extend([float(y_t) for y_t in y_modality])
 
-    # make modality preds, intervals etc into dataframe=
-    modality_preds = pd.DataFrame(modality_preds)
-    modality_preds.columns = [block_type_modality]
-    modality_preds['interval'] = intervals
-    modality_preds['trial'] = trials
-    modality_preds['true'] = modality_true
+    results = {}
+    results = {
+        'block_type_modality': block_type_modality,
+        'modality_preds': modality_preds,
+        'interval': intervals,
+        'trial': trials,
+        'true': modality_true,
+        'cum_interval': intervals.copy()
+    }
 
-    # make cum interval
-    modality_preds['cum_interval'] = modality_preds['interval'].copy()
+    # Calculate cumulative intervals
     prev_trial = None
-    for trial in modality_preds['trial'].unique():
+    max_interval = 0
+    for i in range(len(results['trial'])):
+        trial = results['trial'][i]
         if prev_trial is None:
             prev_trial = trial
-            continue
-        else:
-            max_interval = modality_preds[modality_preds['trial'] == prev_trial]['interval'].max()
-            modality_preds.loc[modality_preds['trial'] >= trial, 'cum_interval'] += max_interval
+        elif trial != prev_trial:
+            max_interval += max([results['interval'][j] for j in range(len(results['trial'])) if results['trial'][j] == prev_trial])
+            prev_trial = trial
+        results['cum_interval'][i] += max_interval
 
-    return modality_preds
+    # Return the results dictionary
+    return results

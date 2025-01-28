@@ -677,7 +677,7 @@ class FeatureEncoder(nn.Module):
     def forward(self, neural, visual):
         for mod in self.neural_state_blocks:
             neural = mod(neural, neural, neural, self.mask)
-        if self.frame_state_blocks is not None and visual.nelement() > 0:
+        if self.frame_state_blocks is not None and visual is not None and visual.nelement() > 0:
             for mod in self.frame_state_blocks:
                 visual = mod(visual, visual, visual)
             
@@ -917,6 +917,16 @@ class ImprovedGRU(nn.Module):
         return torch.stack(outputs, dim=1), h
 
 
+class Modality3D(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        """
+        1. Receive 3D mode in format (B, T, H, W)
+        2. Embed with 3D positional encoding
+        3. Flatten 
+        """
+
+
 class Neuroformer(nn.Module):
     """ The full Neuroformer Model
     
@@ -969,12 +979,15 @@ class Neuroformer(nn.Module):
             for modality_type, modality_config in self.modalities_config.items():
                 for variable_name, variable_config in modality_config['variables'].items():
                     if variable_config.get('predict', False):
+                        n_classes = variable_config.get('n_classes', 1)
                         if modality_type not in self.modality_projection_heads.keys():
                             self.modality_projection_heads[modality_type] = nn.ModuleDict()
                         if variable_config.get('objective') == 'regression':
-                            self.modality_projection_heads[modality_type][variable_name] = nn.Linear(config.n_embd, 1, bias=True)
+                            self.modality_projection_heads[modality_type][variable_name] = nn.Linear(config.n_embd, 
+                                                                                                     n_classes, bias=True)
                         if variable_config.get('objective') == 'classification':
-                            self.modality_projection_heads[modality_type][variable_name] = nn.Linear(config.n_embd, variable_config.get('n_classes', 1), bias=False)
+                            self.modality_projection_heads[modality_type][variable_name] = nn.Linear(config.n_embd, 
+                                                                                                     n_classes, bias=False)
                         
         # TODO: add learnt frame embedding
         # frame embeddings
@@ -1027,16 +1040,12 @@ class Neuroformer(nn.Module):
         num_layers = 5  # define the number of layers you need
         if config.mlp_only:
             self.mlp = nn.Sequential(*[ProjectNorm(config.n_embd, config.n_embd) for _ in range(num_layers)])
-            # print no. parameters:
-            logger.info("number of parameters: %e", sum(p.numel() for p in self.parameters()))
         elif config.gru_only:
             self.gru = NF_GRU(config)
         # elif config.gru_tapered:
             # self.gru = Tapered_GRU(config)
         elif get_attr(config, "gru2_only"):
             self.gru = ImprovedGRU(config)
-            # print no. parameters:
-            logger.info("number of parameters: %e", sum(p.numel() for p in self.parameters()))
         
         logger.info("number of parameters: %e", sum(p.numel() for p in self.parameters()))
 
@@ -1169,7 +1178,7 @@ class Neuroformer(nn.Module):
         # Extract image features and add time embeddings
         if 'frames' in x and frames != None:
             frame_embeddings = frames    # self.tok_emb(frames)
-            im_3d_embeddings = self.frame_3d_emb(frames)
+            im_3d_embeddings = self.frame_3d_emb(frames).to(frames.device)
             frame_embeddings = frames + im_3d_embeddings
             frame_embeddings = rearrange(frames, 'b t h w e -> b (t h w) e')
             frame_sos = token_embeddings[:, 0].unsqueeze(1)
@@ -1268,7 +1277,8 @@ class Neuroformer(nn.Module):
                             modality_projection = self.modality_projection_heads[modality_type][variable_name](x_mean)
                             modality_target = targets['modalities'][modality_type][variable_name]['value']
                             if variable_config['objective'] == 'regression':
-                                loss_modality = F.mse_loss(modality_projection, modality_target.view(B, -1))
+                                modality_target_flat = modality_target.view(B, -1)
+                                loss_modality = F.mse_loss(modality_projection, modality_target_flat) / modality_target_flat.shape[-1]
                             elif variable_config['objective'] == 'classification':
                                 loss_modality = F.cross_entropy(modality_projection.view(-1, modality_projection.size(-1)), modality_target.view(-1))
                             loss[f'{variable_name}'] = loss_modality

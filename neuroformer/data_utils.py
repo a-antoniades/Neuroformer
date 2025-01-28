@@ -21,6 +21,37 @@ from skimage import io
 
 import copy
 
+def create_nested_defaultdict():
+    return collections.defaultdict(dict)
+
+def bin_spikes(data, dt):
+    """
+    spikerates = bin_spikes(response, 0.1)
+    """
+    # Compute the maximum time across all spike times
+    max_time = max(neuron[0].max() for neuron in data if neuron[0].size != 0)
+
+    # Compute the number of intervals
+    N_intervals = int(np.ceil(max_time / dt))
+
+    # Create a 2D matrix of zeros
+    N_Neurons = len(data)
+    spike_matrix = np.zeros((N_Neurons, N_intervals))
+
+    # Iterate over the neurons and their spike times
+    for i, neuron in enumerate(data):
+        # Remove NaN values
+        spike_times = neuron[0][~np.isnan(neuron[0])]
+        # Iterate over the spike times
+        for spike_time in spike_times:
+            # Compute the interval index for the spike time
+            interval_index = int(spike_time // dt)
+
+            # Increment the spike count for the neuron and interval
+            spike_matrix[i, interval_index] += 1
+
+    return spike_matrix
+
 
 def trial_df(data):
     """
@@ -169,7 +200,7 @@ def set_trials(df, trials):
 def get_df_visnav(data, trials=None, dt_vars=None):
     """
     # data: Number of neurons (N,)
-    # returns: Time x ID x Trial dataframe
+    # returns: Time, ID, Trial dataframe
     """
     # gather data from all the different neurons/trials
     df_dict = collections.defaultdict(dict)
@@ -554,6 +585,8 @@ def get_var(data, interval, variable_name, trial=None, dt=None):
     elif isinstance(data, np.ndarray):
         assert dt is not None
         idx0, idx1 = get_frame_idx(interval[0], dt), get_frame_idx(interval[1], dt)
+        if (idx0-idx1) == 0:
+            print(f"error! idx0: {idx0}, idx1: {idx1}, interval: {interval}")
         variable = data[idx0:idx1]
         time = np.arange(interval[0], interval[1], dt)
         data = {
@@ -855,13 +888,31 @@ class NFDataloader(Dataset):
 
         def __len__(self):
                 return len(self.t)
+        
+        def remove_smaller_values(self, data, window, window_prev):
+            """
+            Removes values from the data that are less than the sum of window and window_prev.
+
+            Parameters:
+            data (array-like): An array or pandas Series containing the values to be filtered.
+            window (numeric): The window value.
+            window_prev (numeric): The previous window value.
+
+            Returns:
+            array-like: The filtered array or pandas Series with values less than the sum of window and window_prev removed.
+            """
+            threshold = window + window_prev
+            if isinstance(data, (np.ndarray, list, pd.Series)):
+                return [x for x in data if x >= threshold]
+            else:
+                raise TypeError("Input data must be a list or pandas Series")
 
         def set_intervals(self, data=None):
             if self.intervals is not None:
                 print(f"Using explicitly passed intervals")
                 self.t = self.intervals
                 # remove any intervals < window + window_prev
-                # self.t = self.t[self.t > self.window + self.window_prev]
+                self.t = self.remove_smaller_values(self.t, self.window, self.window_prev)
             else:
                 raise NotImplementedError("No intervals passed")
 
@@ -917,7 +968,8 @@ class NFDataloader(Dataset):
             # prev_id_interval = (data[data['Trial'] == trial - 1]['Time'].max(), prev_id_interval[1])
             return prev_id_data, prev_id_interval
         
-        def get_behavior(self, data, interval, variable_name=None, trial=None, dt=None, tokenizer=None):
+        def get_behavior(self, data, interval, variable_name=None, 
+                         trial=None, dt=None, tokenizer=None, **kwargs):
             """
             Returns interval[0] >= data < interval[1]
             """
@@ -934,12 +986,14 @@ class NFDataloader(Dataset):
             if tokenizer is not None:
                 behavior = tokenizer.encode(behavior, variable_name)
 
-            # pad
-            n_expected_samples = int((interval[1] - interval[0]) / dt)
-            behavior = pad_tensor(behavior, n_expected_samples, self.stoi['PAD'])
-            behavior_dt = pad_tensor(behavior_dt, n_expected_samples, self.stoi_dt['PAD'])
-            assert len(behavior) == len(behavior_dt), f"behavior: {len(behavior)}, behavior_dt: {len(behavior_dt)}"
-            return behavior.unsqueeze(-1), behavior_dt
+            # pad 
+            if not kwargs.get('is_3D', False):
+                n_expected_samples = int((interval[1] - interval[0]) / dt)
+                behavior = pad_tensor(behavior, n_expected_samples, self.stoi['PAD'])
+                behavior_dt = pad_tensor(behavior_dt, n_expected_samples, self.stoi_dt['PAD'])
+                behavior, behavior_dt = behavior.unsqueeze(-1), behavior_dt
+            # assert len(behavior) == len(behavior_dt), f"behavior: {len(behavior)}, behavior_dt: {len(behavior_dt)}"
+            return behavior, behavior_dt
 
         def get_interval(self, interval, trial, block_size, data=None, data_dict=None, n_stim=None, pad=True):
             """
@@ -970,15 +1024,20 @@ class NFDataloader(Dataset):
                 # assert (idx_1 - idx_0) == (interval[1] - interval[0]) / self.dt, "interval is not continuous"
                 idx_0 = get_frame_idx(interval[0], self.dt)
                 idx_1 = get_frame_idx(interval[1], self.dt)
+                neuron_array_ori = neuron_array
                 neuron_array = neuron_array[:, idx_0:idx_1]
                 time_array = np.array([i * self.dt for i in range(idx_0, idx_1)])
                 if len(neuron_array.shape) == 1:
                     # second dimension (interval) has to exist
                     neuron_array = neuron_array.reshape(-1, 1)
                 
+                # print(f"""neuron_array: {neuron_array.shape}, time_array: {time_array.shape}, 
+                #         interval: {interval}, neuron_array_ori: {neuron_array_ori.shape},
+                #         indexes: {idx_0}, {idx_1}""")
                 assert len(neuron_array.shape) == 2
-                assert neuron_array.shape[-1] == time_array.shape[-1], f"neuron_array.shape: {neuron_array.shape}, \
-                                                                    time_array.shape: {time_array.shape}"
+                assert neuron_array.shape[-1] == time_array.shape[-1], f"""neuron_array: {neuron_array.shape}, time_array: {time_array.shape}, 
+                                                                        interval: {interval}, neuron_array_ori: {neuron_array_ori.shape},
+                                                                        indexes: {idx_0}, {idx_1}"""
                 # now add all firings and timings
                 neuron_firings = []
                 neuron_timings = []
@@ -1051,7 +1110,7 @@ class NFDataloader(Dataset):
                         t['Stimulus'] = interval_[2].astype(int) if self.dataset not in ['LRN', 'Distance-Coding', 'lateral', 'medial', 'V1AL'] else 0
                     else:
                         t['Interval'] = interval_
-                        t['Trial'] = interval_[2].astype(int) if self.dataset not in ['LRN', 'Distance-Coding', 'lateral', 'medial', 'V1AL'] else 0
+                        t['Trial'] = 0 # interval_[2].astype(int) # if self.dataset not in ['LRN', 'Distance-Coding', 'lateral', 'medial', 'V1AL'] else 0
                         t['Stimulus'] = torch.zeros(1, dtype=torch.long) if self.dataset not in ['LRN', 'Distance-Coding'] else None
 
                 x = collections.defaultdict(list)
@@ -1082,7 +1141,7 @@ class NFDataloader(Dataset):
 
                 ## BEHAVIOR ##
                 if self.modalities is not None:
-                    x['modalities'] = collections.defaultdict(lambda: collections.defaultdict(dict))
+                    x['modalities'] = collections.defaultdict(create_nested_defaultdict)
                     for modality_type, modality in self.modalities.items():
                         for variable_name, variable in modality['variables'].items():
                             # check if window exists
@@ -1095,13 +1154,14 @@ class NFDataloader(Dataset):
                                 var_interval = (current_id_interval[0], current_id_interval[1])
                             value, dt = self.get_behavior(variable['data'], var_interval, 
                                                         variable_name=variable_name, trial=t['Trial'], dt=variable['dt'],
-                                                        tokenizer=self.tokenizer if variable['objective'] == 'classification' else None)
+                                                        tokenizer=self.tokenizer if variable['objective'] == 'classification' else None,
+                                                        is_3D=variable.get('3D', False))
                             if variable['predict'] is True:
                                 # TODO: implement for more than just 0.05 curr window
                                 # pick only current_state behavior
                                 if 'modalities' not in y.keys():
-                                    y['modalities'] = collections.defaultdict(lambda: collections.defaultdict(dict))
-                                y['modalities'][modality_type][variable_name]['value'], y['modalities'][modality_type][variable_name]['dt'] = value[:, -1], dt[-1]
+                                    y['modalities'] = collections.defaultdict(create_nested_defaultdict)
+                                y['modalities'][modality_type][variable_name]['value'], y['modalities'][modality_type][variable_name]['dt'] = value, dt[-1]
                             else:
                                 x['modalities'][modality_type][variable_name]['value'] = value
                                 x['modalities'][modality_type][variable_name]['dt'] = dt

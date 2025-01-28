@@ -15,11 +15,11 @@ block_size:
   prev_id: 700
 
 layers:
-  state_history: 8
-  state: 8
-  stimulus: 8
-  behavior: 8
-  self_att: 8
+  state_history: 6
+  state: 6
+  stimulus: 6
+  behavior: 6
+  self_att: 6
   modalities:
     n_behavior: 25
 
@@ -41,23 +41,30 @@ window:
 # ...or add your own :D
 modalities:
   behavior:
-    n_layers: 4
+    n_layers: 8
     variables:
-      phi:
-        data: phi
+      # phi:
+      #   data: phi
+      #   dt: 0.05
+      #   objective: regression
+      #   predict: true
+      # speed:
+      #   data: speed
+      #   dt: 0.05
+      #   objective: regression
+      #   predict: true
+      # th:
+      #   data: th
+      #   dt: 0.05
+      #   objective: regression
+      #   predict: true
+      depth:
+        data: depth
         dt: 0.05
         objective: regression
         predict: true
-      speed:
-        data: speed
-        dt: 0.05
-        objective: regression
-        predict: true
-      th:
-        data: th
-        dt: 0.05
-        objective: regression
-        predict: true
+        n_classes: 29000
+        3D: true
     window: 0.05
 
 predict: null
@@ -76,7 +83,7 @@ contrastive:
   clip_temp: 0.5
 # resolution for predictions
 resolution:
-  dt: 0.01
+  dt: 0.05
   speed: 0.2
   frames: 0.05
 

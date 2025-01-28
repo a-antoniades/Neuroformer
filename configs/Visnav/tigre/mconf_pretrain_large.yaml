@@ -15,11 +15,11 @@ block_size:
   prev_id: 700
 
 layers:
-  state_history: 8
-  state: 8
-  stimulus: 8
-  behavior: 8
-  self_att: 8
+  state_history: 6
+  state: 6
+  stimulus: 0
+  behavior: 0
+  self_att: 6
   modalities:
     n_behavior: 25
 
@@ -39,34 +39,48 @@ window:
 
 # Hey! Uncomment here to input modalities!
 # ...or add your own :D
-modalities:
-  behavior:
-    n_layers: 4
-    variables:
-      phi:
-        data: phi
-        dt: 0.05
-        objective: regression
-        predict: true
-      speed:
-        data: speed
-        dt: 0.05
-        objective: regression
-        predict: true
-      th:
-        data: th
-        dt: 0.05
-        objective: regression
-        predict: true
-    window: 0.05
+# modalities:
+#   behavior:
+#     n_layers: 8
+#     variables:
+#       # phi:
+#       #   data: phi
+#       #   dt: 0.05
+#       #   objective: regression
+#       #   predict: true
+#       # speed:
+#       #   data: speed
+#       #   dt: 0.05
+#       #   objective: regression
+#       #   predict: true
+#       # th:
+#       #   data: th
+#       #   dt: 0.05
+#       #   objective: regression
+#       #   predict: true
+#       depth:
+#         data: depth
+#         dt: 0.05
+#         objective: regression
+#         predict: true
+#         n_classes: 29000
+#         3D: true
+#       luminance:
+#         data: vid_sm
+#         dt: 0.05
+#         objective: regression
+#         predict: true
+#         n_classes: 29000
+#         3D: true
+#     window: 0.05
 
 predict: null
 
 frame_encoder:
   conv_layer: true
   kernel_size: [3, 5, 5]
-  n_embd: 256
-  n_embd_frames: 64
+  n_embd: 512
+  n_embd_frames: 128
   resnet_backbone: false
 
 contrastive:
@@ -76,7 +90,7 @@ contrastive:
   clip_temp: 0.5
 # resolution for predictions
 resolution:
-  dt: 0.01
+  dt: 0.05
   speed: 0.2
   frames: 0.05
 
@@ -90,7 +104,7 @@ class_weights: null
 freeze_weights: null
 n_head: 8
 epoch: 0
-n_embd: 256
+n_embd: 512
 pos_emb: true
 pretrain: false
 temp_emb: true

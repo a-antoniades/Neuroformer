@@ -18,3 +18,4 @@ pip install seaborn
 pip install scikit-learn
 pip install gdown
 pip install wandb
+pip install mat73

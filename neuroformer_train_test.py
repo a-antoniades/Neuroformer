@@ -23,7 +23,7 @@ import math
 
 from neuroformer.model_neuroformer import Neuroformer, NeuroformerConfig
 from neuroformer.utils import get_attr
-from neuroformer.trainer import Trainer, TrainerConfig
+from neuroformer.trainer import Trainer, TrainerConfig, custom_debug_collate
 from neuroformer.utils import (set_seed, update_object, running_jupyter, 
                                  all_device, load_config, 
                                  dict_to_object, object_to_dict, recursive_print,
@@ -61,14 +61,12 @@ print(f"PAST_STATE: {args.past_state}")
 
 # Use the function
 if args.config is None:
-    config_path = "./configs/NF_1.5/VisNav_VR_Expt/gru2_only_cls/mconf.yaml"
+    config_path = "./configs/Visnav/lateral/mconf_predict_all.yaml"
 else:
     config_path = args.config
 config = load_config(config_path)  # replace 'config.yaml' with your file path
 
-
-# print visible devices
-print(f"Visible devices: {torch.cuda.device_count()}")
+args.dataset = "visnav_tigre"
 
 # %%
 """ 
@@ -97,8 +95,14 @@ elif args.dataset == "visnav_tigre":
     callback = load_visnav_2("visnav_tigre", config, 
                            selection=config.selection if hasattr(config, "selection") else None)
 
+
+
 spikes = data['spikes']
 stimulus = data['stimulus']
+
+
+# %%
+data.keys()
 
 # %%
 window = config.window.curr
@@ -188,8 +192,8 @@ token_types = configure_token_types(config, modalities)
 tokenizer = Tokenizer(token_types)
 
 
-# %%
 
+# %%
 if modalities is not None:
     for modality_type, modality in modalities.items():
         for variable_type, variable in modality.items():
@@ -210,21 +214,48 @@ x, y = next(iterable)
 print(x['id'])
 print(x['dt'])
 recursive_print(x)
+recursive_print(y)
 
 # Update the config
 config.id_vocab_size = tokenizer.ID_vocab_size
 model = Neuroformer(config, tokenizer)
 
 # Create a DataLoader
-loader = DataLoader(test_dataset, batch_size=2, shuffle=True, num_workers=0)
+loader = DataLoader(train_dataset, batch_size=32, 
+                    shuffle=True, num_workers=4,
+                    collate_fn=custom_debug_collate)
 iterable = iter(loader)
 x, y = next(iterable)
 recursive_print(y)
+
+# %%
+from tqdm import tqdm
+pbar = tqdm(loader)
+for x, y in pbar:
+    if y['modalities']['behavior']['depth']['value'].shape[0] == 0:
+        print(f"error: interval: {x['interval']}")
+        exit()
+    else:
+        pass
+
+print(f"all done!")
+exit() 
+
+# %%
+model = Neuroformer(config, tokenizer)
+
+# %%
+preds, features, loss = model(x, y)
+
+# %%
+loss
+
+# %%
 preds, features, loss = model(x, y)
 
 # Set training parameters
-MAX_EPOCHS = 500
-BATCH_SIZE = 32
+MAX_EPOCHS = 250
+BATCH_SIZE = 32 * 2
 SHUFFLE = True
 
 if config.gru_only:
@@ -256,7 +287,7 @@ if args.sweep_id is not None:
     wandb.agent(args.sweep_id, function=train_sweep)
 else:
     # Create a TrainerConfig and Trainer
-    tconf = TrainerConfig(max_epochs=MAX_EPOCHS, batch_size=BATCH_SIZE, learning_rate=2.5e-5, 
+    tconf = TrainerConfig(max_epochs=MAX_EPOCHS, batch_size=BATCH_SIZE, learning_rate=1e-4, 
                           num_workers=16, lr_decay=True, patience=3, warmup_tokens=8e7, 
                           decay_weights=True, weight_decay=1.0, shuffle=SHUFFLE,
                           final_tokens=len(train_dataset)*(config.block_size.id) * (MAX_EPOCHS),
@@ -264,9 +295,10 @@ else:
                           show_grads=False,
                           ckpt_path=CKPT_PATH, no_pbar=False, 
                           dist=args.dist, save_every=0, eval_every=5, min_eval_epoch=50,
-                          use_wandb=args.wandb, wandb_project="neuroformer", 
-                          wandb_group=f"1.6_visnav_{args.dataset}", wandb_name=args.title,
-                          debug=args.debug, loss_bprop=args.loss_bprop)
+                          use_wandb=False, wandb_project="neuroformer", 
+                          wandb_group=f"1.5.1_visnav_{args.dataset}", wandb_name=args.title)
 
     trainer = Trainer(model, train_dataset, test_dataset, tconf, config)
     trainer.train()
+
+
