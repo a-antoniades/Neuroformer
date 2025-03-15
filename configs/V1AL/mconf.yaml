@@ -1,0 +1,78 @@
+dropout:
+  attn: 0.2
+  embd: 0.2
+  pos: 0.2
+  resid: 0.2
+  temp: 0.2
+  b: 0.2
+  id: 0.2
+  im: 0.2
+
+block_size:
+  behavior: 15
+  frame: 446
+  id: 100
+  prev_id: 100
+
+layers:
+  state_history: 6
+  state: 6
+  stimulus: 6
+  behavior: 6
+  self_att: 6
+  modalities:
+    n_behavior: 25
+
+sparse:
+  p: null
+  mask: false
+  topk: null
+  topk_frame: null
+  topk_id: null
+  topk_prev_id: null
+
+window:
+  frame: 0.2
+  curr: 0.05
+  prev: 0.15
+
+predict: null
+
+frame_encoder:
+  conv_layer: true
+  kernel_size: [3, 8, 8]
+  stride_size: [3, 4, 4]
+  n_embd: 256
+  n_embd_frames: 64
+  resnet_backbone: false
+
+contrastive:
+  contrastive: false
+  vars: ['id', 'frames']
+  clip_embd: 1024
+  clip_temp: 0.5
+
+# resolution for predictions
+resolution:
+  dt: 0.01
+  frames: 0.05
+
+# GRU, MLP experiments
+mlp_only: false
+gru_only: false
+gru2_only: false
+
+# Rest of your parameters
+class_weights: null
+freeze_weights: null
+n_head: 8
+epoch: 0
+n_embd: 256
+pos_emb: true
+pretrain: false
+temp_emb: true
+vit_encoder: true
+ingore_index_pad: true
+
+# selection of the data
+selection: sel1
